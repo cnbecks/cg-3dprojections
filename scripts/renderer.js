@@ -63,6 +63,10 @@ class Renderer {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         // TODO: implement drawing here!
+        console.log(this.scene);
+        console.log(this.scene.view);
+        console.log(this.scene.models);
+        // loop through 
         // For each model
         //   * For each vertex
         //     * transform endpoints to canonical view volume
@@ -178,7 +182,7 @@ class Renderer {
                 }
             }
             else {
-                model.center = Vector4(scene.models[i].center[0],
+                model.center = CG.Vector4(scene.models[i].center[0],
                                        scene.models[i].center[1],
                                        scene.models[i].center[2],
                                        1);
