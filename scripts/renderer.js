@@ -62,11 +62,32 @@ class Renderer {
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // TODO: implement drawing here!
-        console.log(this.scene);
-        console.log(this.scene.view);
         console.log(this.scene.models);
-        // loop through 
+
+        // loop through each model 
+        for (let i=0; i< this.scene.models.length; i++) {
+            console.log(i); //prints only a '0' because there is only one model in projection_app.js
+            //QUESTION: Why are there no vertices in the sample scene given but there are in the projection_app.js?
+
+            //loop through each vertex in the model
+            for (let j=0; j<this.scene.models[i].vertices.length; j++){
+                console.log(j); //prints up to 9 because there are 10 vertices in projection_app.js
+                //transform endpoints to canoncial view volume
+            }
+
+            //   * For each line segment in each edge
+            for (let k=0; k<this.scene.models[i].edges.length; k++) {
+                //now clip each edge (which is an array of points? that correspond to the vertices in this same model?
+                    // Do this part last/later
+
+                // project to 2d
+
+                // translate/scale to viewport (i.e. window)
+
+                // draw line
+            }
+        }
+
         // For each model
         //   * For each vertex
         //     * transform endpoints to canonical view volume
