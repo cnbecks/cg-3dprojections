@@ -62,17 +62,20 @@ class Renderer {
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        console.log(this.scene.models);
+        //define this matrix outside of the for loops as this doesn't change (yet, it will when we start doing arrow keys, etc?)
+        let perspective_matrix = CG.mat4x4Perspective(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup, this.scene.view.clip);
 
         // loop through each model 
         for (let i=0; i< this.scene.models.length; i++) {
-            console.log(i); //prints only a '0' because there is only one model in projection_app.js
+            // console.log(i); //prints only a '0' because there is only one model in projection_app.js
             //QUESTION: Why are there no vertices in the sample scene given but there are in the projection_app.js?
 
             //loop through each vertex in the model
+            let vertices = [];
             for (let j=0; j<this.scene.models[i].vertices.length; j++){
-                console.log(j); //prints up to 9 because there are 10 vertices in projection_app.js
-                //transform endpoints to canoncial view volume
+                let new_vertex = Matrix.multiply([perspective_matrix, this.scene.models[i].vertices[j]]);
+                vertices.push(new_vertex);       
+                console.log(vertices);     
             }
 
             //   * For each line segment in each edge
@@ -80,6 +83,8 @@ class Renderer {
                 //now clip each edge (which is an array of points? that correspond to the vertices in this same model?
                     // Do this part last/later
 
+
+                // PROFESSOR SUGGESTED DOING THIS PART NEXT:
                 // project to 2d
 
                 // translate/scale to viewport (i.e. window)

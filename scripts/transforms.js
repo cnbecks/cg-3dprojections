@@ -3,15 +3,22 @@ import { Matrix, Vector } from "./matrix.js";
 // create a 4x4 matrix to the perspective projection / view matrix
 function mat4x4Perspective(prp, srp, vup, clip) {
     // 1. translate PRP to origin - Tpar
-    let TPar = mat4x4Translate(new Matrix(4,4), -prp.x, -prp.y, -prp.z);
+    let Tpar = new Matrix(4,4);
+    mat4x4Translate(Tpar, -prp.x, -prp.y, -prp.z);
     
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
-    let n = Vector.normalize(prp.subtract(srp));
-    let u = Vector.normalize(vup.cross(n));
+    let n = prp.subtract(srp);
+    n.normalize();
+
+    let u = vup.cross(n);
+    u.normalize();
+
     let v = n.cross(u);
-    let R = [[u[0], u[1], u[2], 0],
-             [v[0], v[1], v[2], 0],
-             [n[0], n[1], n[2], 0],
+
+    let R = new Matrix(4,4);
+    R.values = [[u.x, u.y, u.z, 0],
+             [v.x, v.y, v.z, 0],
+             [n.x, n.y, n.z, 0],
              [0,    0,    0,    0]];
 
     // 3. shear such that CW is on the z-axis
@@ -19,15 +26,17 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     let DOP = CW;
     let shxpar = (-1*DOP[0])/DOP[2];
     let shypar = (-1*DOP[1])/DOP[2];
-    let SHpar = mat4x4ShearXY(new Matrix(4,4), shxpar, shypar);
+    let SHpar = new Matrix(4, 4)
+    mat4x4ShearXY(SHpar, shxpar, shypar);
 
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
     let sperx = (2*clip[4])/((clip[1]-clip[0])*clip[5]);
     let spery = (2*clip[4])/((clip[3]-clip[2])*clip[5]);
     let sperz = 1/clip[5];
-    let Sper = mat4x4Scale(new Matrix(4,4), sperx, spery, sperz);
+    let Sper = new Matrix(4, 4)
+    mat4x4Scale(Sper, sperx, spery, sperz);
 
-    let transform = Matrix.multiply([Sper, Tpar, SHpar, R, TPRP]);
+    let transform = Matrix.multiply([Sper, SHpar, R, Tpar]); 
     return transform;
 }
 
