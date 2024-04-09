@@ -30,7 +30,12 @@ class Renderer {
 
     //
     rotateLeft() {
-
+        this.scene.view.srp.x = Number(this.scene.view.srp.x) - 0.1;
+        this.scene.view.srp.z = Number(this.scene.view.srp.z) - 0.1;
+        console.log(this.scene.view.srp.x);
+        console.log(this.scene.view.srp.z);
+        console.log('hey');
+        this.draw();
     }
     
     //
@@ -40,22 +45,30 @@ class Renderer {
     
     //
     moveLeft() {
-
+        this.scene.view.prp.x = Number(this.scene.view.prp.x) - 1;
+        this.scene.view.srp.x = Number(this.scene.view.srp.x) - 1;
+        this.draw();
     }
     
     //
     moveRight() {
-
+        this.scene.view.prp.x = Number(this.scene.view.prp.x) + 1;
+        this.scene.view.srp.x = Number(this.scene.view.srp.x) + 1;
+        this.draw();
     }
     
     //
     moveBackward() {
-
+        this.scene.view.prp.z = Number(this.scene.view.prp.z) + 1;
+        this.scene.view.srp.z = Number(this.scene.view.srp.z) + 1;
+        this.draw();
     }
     
     //
     moveForward() {
-
+        this.scene.view.prp.z = Number(this.scene.view.prp.z) - 1;
+        this.scene.view.srp.z = Number(this.scene.view.srp.z) - 1;
+        this.draw();
     }
 
     //
@@ -69,9 +82,6 @@ class Renderer {
 
         // loop through each model 
         for (let i=0; i< this.scene.models.length; i++) {
-            // console.log(i); //prints only a '0' because there is only one model in projection_app.js
-            //QUESTION: Why are there no vertices in the sample scene given but there are in the projection_app.js?
-
             //loop through each vertex in the model
             let vertices = [];
             for (let j=0; j<this.scene.models[i].vertices.length; j++){
@@ -115,12 +125,11 @@ class Renderer {
                 console.log(scaled_vertices);
                 //now all of our vertices are Vectors that are scaled appropraitely and we can draw lines between vertices
 
-                //we need to draw in cartesian
-
                 // draw the line(s)
                 // loop through scaled vertices and draw appropriate lines
                 for (let svtx=0; svtx<scaled_vertices.length-1; svtx++) {
                     this.drawLine(scaled_vertices[svtx].x/scaled_vertices[svtx].w, scaled_vertices[svtx].y/scaled_vertices[svtx].w, scaled_vertices[svtx+1].x/scaled_vertices[svtx+1].w, scaled_vertices[svtx+1].y/scaled_vertices[svtx+1].w);
+                    // draw in cartesian by dividing by w
                 }
             }
         }
