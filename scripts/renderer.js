@@ -64,6 +64,8 @@ class Renderer {
 
         //define this matrix outside of the for loops as this doesn't change (yet, it will when we start doing arrow keys, etc?)
         let perspective_matrix = CG.mat4x4Perspective(this.scene.view.prp, this.scene.view.srp, this.scene.view.vup, this.scene.view.clip);
+        let mper_matrix = CG.mat4x4MPer();
+        let viewport = CG.mat4x4Viewport(this.canvas.width, this.canvas.height);
 
         // loop through each model 
         for (let i=0; i< this.scene.models.length; i++) {
@@ -75,21 +77,49 @@ class Renderer {
             for (let j=0; j<this.scene.models[i].vertices.length; j++){
                 let new_vertex = Matrix.multiply([perspective_matrix, this.scene.models[i].vertices[j]]);
                 vertices.push(new_vertex);       
-                console.log(vertices);     
             }
 
-            //   * For each line segment in each edge
+            //   * For (each line segment in) each edge
             for (let k=0; k<this.scene.models[i].edges.length; k++) {
-                //now clip each edge (which is an array of points? that correspond to the vertices in this same model?
+                // Clip each edge
                     // Do this part last/later
 
+                // loop through the vertices in each edge which have number that correspond to the vertices...
+                // For each line segment (in each edge)
+                let actual_vertices = []; //actual vertices for the edge
+                for (let v=0; v<this.scene.models[i].edges[k].length; v++) {
+                    // use the vertex numbers in the edge to create a list with the actual vertices
+                    let vertex_number = this.scene.models[i].edges[k][v]; //in model i, in the edge k, get the vertex number v
+                    let vertex_from_number = vertices[vertex_number]; // using this number, get its corresponding Vector
+                    actual_vertices.push(vertex_from_number); // push the actual vertex, a Vector, onto the list
+                }
+                // now our vertices_of_edge are actual Vectors
+                console.log(actual_vertices);
 
-                // PROFESSOR SUGGESTED DOING THIS PART NEXT:
-                // project to 2d
+                // Project to 2D by multiplying by MPer
+                let vertices_of_edge = []
+                for (let p=0; p<actual_vertices.length; p++) {
+                    let mper_vertex = Matrix.multiply([mper_matrix, actual_vertices[p]]);
+                    console.log(mper_vertex);
+                    vertices_of_edge.push(mper_vertex);
+                }
+                console.log(vertices_of_edge);
 
-                // translate/scale to viewport (i.e. window)
+                // Translate to viewport
+                let scaled_vertices = [];
+                // For each edge, multiply the vertices (Vectors) by the viewport to scale them appropriately
+                for (let vtx=0; vtx<vertices_of_edge.length; vtx++) {
+                    let scaled_vertex = Matrix.multiply([viewport, vertices_of_edge[vtx]]);
+                    scaled_vertices.push(scaled_vertex);
+                }
+                console.log(scaled_vertices);
+                //now all of our vertices are Vectors that are scaled appropraitely and we can draw lines between vertices
 
-                // draw line
+                // draw the line(s)
+                // loop through scaled vertices and draw appropriate lines
+                for (let svtx=0; svtx<scaled_vertices.length-1; svtx++) {
+                    this.drawLine(scaled_vertices[svtx].x, scaled_vertices[svtx].y, scaled_vertices[svtx+1].x, scaled_vertices[svtx+1].y);
+                }
             }
         }
 
