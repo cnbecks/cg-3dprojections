@@ -115,10 +115,12 @@ class Renderer {
                 console.log(scaled_vertices);
                 //now all of our vertices are Vectors that are scaled appropraitely and we can draw lines between vertices
 
+                //we need to draw in cartesian
+
                 // draw the line(s)
                 // loop through scaled vertices and draw appropriate lines
                 for (let svtx=0; svtx<scaled_vertices.length-1; svtx++) {
-                    this.drawLine(scaled_vertices[svtx].x, scaled_vertices[svtx].y, scaled_vertices[svtx+1].x, scaled_vertices[svtx+1].y);
+                    this.drawLine(scaled_vertices[svtx].x/scaled_vertices[svtx].w, scaled_vertices[svtx].y/scaled_vertices[svtx].w, scaled_vertices[svtx+1].x/scaled_vertices[svtx+1].w, scaled_vertices[svtx+1].y/scaled_vertices[svtx+1].w);
                 }
             }
         }
