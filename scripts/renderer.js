@@ -28,13 +28,65 @@ class Renderer {
         // TODO: update any transformations needed for animation
     }
 
+    generateModel(model, new_model) {
+        let center = model.center;
+        let vertices = [];
+        let edges = [];
+        if (model.type == "cube") {
+            // get required dimensions
+            let w = model.width/2;
+            let h = model.height/2;
+            let d = model.depth/2;
+
+            // calculate front face
+            vertices.push( CG.Vector4(center[0]-w, center[1]+h, center[2]+d, 1) ); // top left
+            vertices.push( CG.Vector4(center[0]+w, center[1]+h, center[2]+d, 1) ); // top right
+            vertices.push( CG.Vector4(center[0]+w, center[1]-h, center[2]+d, 1) ); // bottom right
+            vertices.push( CG.Vector4(center[0]-w, center[1]-h, center[2]+d, 1) ); // bottom left
+            edges.push( [0, 1, 2, 3, 0] );
+
+            // calculate back face
+            vertices.push( CG.Vector4(center[0]-w, center[1]+h, center[2]-d, 1) ); // top left
+            vertices.push( CG.Vector4(center[0]+w, center[1]+h, center[2]-d, 1) ); // top right
+            vertices.push( CG.Vector4(center[0]+w, center[1]-h, center[2]-d, 1) ); // bottom right
+            vertices.push( CG.Vector4(center[0]-w, center[1]-h, center[2]-d, 1) ); // bottom left
+            edges.push( [4, 5, 6, 7, 4] );
+
+            // add in additional edges
+            edges.push( [0, 4] );
+            edges.push( [1, 5] );
+            edges.push( [2, 6] );
+            edges.push( [3, 7] );
+
+        } else if (model.type == "cylinder") {
+            let h = model.height/2
+            let r = model.radius
+            
+            // generate top and bottom circular faces
+            for (let top_bot = 0; top_bot < 2; top_bot++) {
+                for (let i = 0; i < model.sides; i++) {
+                    if ( top_bot == 1 && i == 0 ) { // generating vertices of bottom face
+                        h = -h;
+                    }
+                    let currentTheta = (i / model.sides) * (2 * Math.PI);
+                    vertices.push( CG.Vector4( model.center[0] + model.radius * Math.cos(currentTheta),
+                                               model.center[1] + h,
+                                               model.center[2] + model.radius * Math.sin(currentTheta), 
+                                               1 ) );
+                }
+            }
+            edges.push( [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0] );
+            edges.push( [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 12] );
+        }
+        new_model.vertices = vertices;
+        new_model.edges = edges;
+    }
+
     //
     rotateLeft() {
-        this.scene.view.srp.x = Number(this.scene.view.srp.x) - 0.1;
-        this.scene.view.srp.z = Number(this.scene.view.srp.z) - 0.1;
-        console.log(this.scene.view.srp.x);
-        console.log(this.scene.view.srp.z);
-        console.log('hey');
+        let omega = Math.PI/16
+        this.scene.view.srp.x = this.scene.view.srp.x*Math.cos(omega) - this.scene.view.srp.z*Math.sin(omega);
+        this.scene.view.srp.z = this.scene.view.srp.x*Math.sin(omega) + this.scene.view.srp.z*Math.cos(omega);
         this.draw();
     }
     
@@ -104,16 +156,16 @@ class Renderer {
                     actual_vertices.push(vertex_from_number); // push the actual vertex, a Vector, onto the list
                 }
                 // now our vertices_of_edge are actual Vectors
-                console.log(actual_vertices);
+                //console.log(actual_vertices);
 
                 // Project to 2D by multiplying by MPer
                 let vertices_of_edge = []
                 for (let p=0; p<actual_vertices.length; p++) {
                     let mper_vertex = Matrix.multiply([mper_matrix, actual_vertices[p]]);
-                    console.log(mper_vertex);
+                    //console.log(mper_vertex);
                     vertices_of_edge.push(mper_vertex);
                 }
-                console.log(vertices_of_edge);
+                //console.log(vertices_of_edge);
 
                 // Translate to viewport
                 let scaled_vertices = [];
@@ -122,7 +174,7 @@ class Renderer {
                     let scaled_vertex = Matrix.multiply([viewport, vertices_of_edge[vtx]]);
                     scaled_vertices.push(scaled_vertex);
                 }
-                console.log(scaled_vertices);
+                //console.log(scaled_vertices);
                 //now all of our vertices are Vectors that are scaled appropraitely and we can draw lines between vertices
 
                 // draw the line(s)
@@ -247,8 +299,11 @@ class Renderer {
                         model.animation = JSON.parse(JSON.stringify(scene.models[i].animation));
                     }
                 }
-            }
-            else {
+            } else if (model.type === 'cube') {
+                this.generateModel(scene.models[i], model);
+            } else if (model.type === 'cylinder') {
+                this.generateModel(scene.models[i], model);
+            } else {
                 model.center = CG.Vector4(scene.models[i].center[0],
                                        scene.models[i].center[1],
                                        scene.models[i].center[2],
@@ -263,7 +318,6 @@ class Renderer {
             model.matrix = new Matrix(4, 4);
             processed.models.push(model);
         }
-
         return processed;
     }
     
