@@ -216,35 +216,25 @@ class Renderer {
                 }
 
                 // the actual_vertices correspond to the edge --> line
-                console.log("actual vertices");
-                console.log(actual_vertices);
+                // console.log("actual vertices");
+                // console.log(actual_vertices);
 
                 let clipped_vertices = [];
-
                 //loop through the actual_vertices and clip each line
-                for (let p=0; p<actual_vertices.length-1; p++) {
+                for (let i=0; i<actual_vertices.length-1; i++) {
                     let line = {pt0: actual_vertices[i], pt1: actual_vertices[i+1]}
-
                     let new_line = this.clipLinePerspective(line, this.scene.view.clip[4]);
+                    console.log("new line:");
+                    console.log(new_line);
                     if (new_line != null) {
-                        clipped_vertices.push(new_line[0]);
-                        clipped_vertices.push(newline[1]);
+                        clipped_vertices.push(new_line.pt0);
+                        clipped_vertices.push(new_line.pt1);
                     }
                 }   
-
-
-
-
-               // line:         object {pt0: Vector4, pt1: Vector4}
-                    // z_min:        float (near clipping plane in canonical view volume)
-                // Clip each edge 
-                // we have to send the vertices corresponding to the edge
-                    // Do this part last/later
-
-
-
+                actual_vertices = clipped_vertices;
+                // console.log('after clipping');
+                // console.log(actual_vertices);
                 // now our vertices_of_edge are actual Vectors
-                //console.log(actual_vertices);
 
                 // Project to 2D by multiplying by MPer
                 let vertices_of_edge = []
@@ -308,52 +298,61 @@ class Renderer {
         return outcode;
     }
 
-    calcXYZ(t){
+    calcXYZ(pt0, change_x, change_y, change_z, t){
         let x = pt0.x + t*change_x;
         let y = pt0.y + t*change_y;
         let z = pt0.z + t*change_z;
-        let intersect_pt = {x: x, y:y, z:z};
-        return intersect_pt;    }
+        let intersect_pt = CG.Vector3(x, y,z);
+        return intersect_pt;
+    }
 
     calctLeft(pt0, pt1) {
         let change_x = (pt1.x-pt0.x);
         let change_y = (pt1.y-pt0.y);
         let change_z = (pt1.z-pt0.z);
         let t = ((-1*pt0.x) + pt0.z)/(change_x-change_z);
-        this.calcXYZ(t);
+        return this.calcXYZ(pt0, change_x, change_y, change_z, t);
     }
 
-    // calculateIntersectionX(pt0, pt1, x_val) {
-    //     let intersect_pt = {x: x_val, y: 0};
-    
-    //     let t = (x_val - pt0.x)/(pt1.x - pt0.x);
-    //     y = (1-t)*pt0.y + t*pt1.y;
-    //     intersect_pt.y = y;
-    
-    //     return intersect_pt;
-    // }
-                
-    calculateIntersectionY(pt0, pt1, y_val) {
-        let intersect_pt = {x: 0, y: y_val};
-    
-        let t = (y_val - pt0.y)/(pt1.y - pt0.y);
-        x = (1-t)*pt0.x + t*pt1.x;
-        intersect_pt.x = x;
-    
-        return intersect_pt;
+    calctRight(pt0, pt1) {
+        let change_x = (pt1.x-pt0.x);
+        let change_y = (pt1.y-pt0.y);
+        let change_z = (pt1.z-pt0.z);
+        let t = (pt0.x + pt0.z)/((-1*change_x)-change_z);
+        return this.calcXYZ(pt0, change_x, change_y, change_z, t);
     }
 
-    intersectNear(pt0, pt1, z_val) {
-        let intersect_pt = {x: 0, y: y_val};
-    
-        let t = (y_val - pt0.y)/(pt1.y - pt0.y);
-        x = (1-t)*pt0.x + t*pt1.x;
-        intersect_pt.x = x;
-    
-        return intersect_pt;
+    calctBottom(pt0, pt1) {
+        let change_x = (pt1.x-pt0.x);
+        let change_y = (pt1.y-pt0.y);
+        let change_z = (pt1.z-pt0.z);
+        let t = ((-1)*pt0.y + pt0.z)/(change_y-change_z);
+        return this.calcXYZ(pt0, change_x, change_y, change_z, t);
     }
 
+    calctTop(pt0, pt1) {
+        let change_x = (pt1.x-pt0.x);
+        let change_y = (pt1.y-pt0.y);
+        let change_z = (pt1.z-pt0.z);
+        let t = (pt0.y + pt0.z)/((-1*change_y)-change_z);
+        return this.calcXYZ(pt0, change_x, change_y, change_z, t);
+    }
 
+    calctNear(pt0, pt1, z_min) {
+        let change_x = (pt1.x-pt0.x);
+        let change_y = (pt1.y-pt0.y);
+        let change_z = (pt1.z-pt0.z);
+        let t = (pt0.z-z_min)/(-1*change_z);
+        return this.calcXYZ(pt0, change_x, change_y, change_z, t);
+    }
+
+    calctFar(pt0, pt1) {
+        let change_x = (pt1.x-pt0.x);
+        let change_y = (pt1.y-pt0.y);
+        let change_z = (pt1.z-pt0.z);
+        let t = ((-1*pt0.z)-1)/(change_z);
+        return this.calcXYZ(pt0, change_x, change_y, change_z, t);
+    }    
 
     // Clip line - should either return a new line (with two endpoints inside view volume)
     //             or null (if line is completely outside view volume)
@@ -367,22 +366,52 @@ class Renderer {
         let out1 = this.outcodePerspective(p1, z_min);
 
         let accept = false;
-        while (accept == false) {
+        let count = 0;
+        while (count < 4) {
+            console.log('while');
             if ((out0 | out1) == 0) {
                 accept = true;
-                result = line;
+                result ={pt0: CG.Vector4(p0.x, p0.y, p0.z, 0), pt1: CG.Vector4(p1.x, p1.y, p1.z, 0)};
+                return result
             } else if ((out0 & out1) != 0) {
                 accept = true;
-                result = null;
-            } else {
-                
+                return result;
             }
 
+            if (out0 == LEFT) {
+                p0 = this.calctLeft(p0, p1);
+            } else if (out0 == RIGHT) {
+                p0 = this.calctRight(p0, p1);
+            } else if (out0 == BOTTOM) {
+                p0 = this.calctBottom(p0, p1);
+            } else if (out0 == TOP) {
+                p0 = this.calctTop(p0, p1);
+            } else if (out0 == FAR) {
+                p0 = this.calctFar(p0, p1);
+            } else if (out0 == NEAR) {
+                p0 = this.calctNear(p0, p1, z_min);
+            }
+
+            if (out1 == LEFT) {
+                p1 = this.calctLeft(p1, p0);
+            } else if (out1 == RIGHT) {
+                p1 = this.calctRight(p1, p0);
+            } else if (out1 == BOTTOM) {
+                p1 = this.calctBottom(p1, p0);
+            } else if (out1 == TOP) {
+                p1 = this.calctTop(p1, p0);
+            } else if (out1 == FAR) {
+                p1 = this.calctFar(p1, p0);
+            } else if (out1 == NEAR) {
+                p1 = this.calctNear(p1, p0, z_min);
+            }
+            console.log('p0');
+            console.log(p0);
+            console.log(p1);
+
+
+            count = count+1;
         }
-        
-        // TODO: implement clipping here!
-        
-        return result;
     }
 
     //
