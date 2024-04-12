@@ -308,31 +308,17 @@ class Renderer {
         return outcode;
     }
 
-    calcXYZ(t){
-        let x = pt0.x + t*change_x;
-        let y = pt0.y + t*change_y;
-        let z = pt0.z + t*change_z;
-        let intersect_pt = {x: x, y:y, z:z};
-        return intersect_pt;    }
+    calculateT(x0, x1, y0, y1) {
 
-    calctLeft(pt0, pt1) {
-        let change_x = (pt1.x-pt0.x);
-        let change_y = (pt1.y-pt0.y);
-        let change_z = (pt1.z-pt0.z);
-        let t = ((-1*pt0.x) + pt0.z)/(change_x-change_z);
-        this.calcXYZ(t);
     }
 
-    intersectRight(pt0, pt1) {
-        let change_x = (pt1.x-pt0.x);
-        let change_y = (pt1.y-pt0.y);
-        let change_z = (pt1.z-pt0.z);
-        let t = (pt0.x + pt0.z)/(-1*(change_x)-+change_z);
-
-        let x = pt0.x + t*change_x;
-        let y = pt0.y + t*change_y;
-        let z = pt0.z + t*change_z;
-        let intersect_pt = {x: x, y:y, z:z};
+    calculateIntersectionX(pt0, pt1, x_val) {
+        let intersect_pt = {x: x_val, y: 0};
+    
+        let t = (x_val - pt0.x)/(pt1.x - pt0.x);
+        y = (1-t)*pt0.y + t*pt1.y;
+        intersect_pt.y = y;
+    
         return intersect_pt;
     }
                 
@@ -346,7 +332,7 @@ class Renderer {
         return intersect_pt;
     }
 
-    calculateIntersectionZ(pt0, pt1, z_val) {
+    intersectNear(pt0, pt1, z_val) {
         let intersect_pt = {x: 0, y: y_val};
     
         let t = (y_val - pt0.y)/(pt1.y - pt0.y);
@@ -355,6 +341,7 @@ class Renderer {
     
         return intersect_pt;
     }
+
 
 
     // Clip line - should either return a new line (with two endpoints inside view volume)
