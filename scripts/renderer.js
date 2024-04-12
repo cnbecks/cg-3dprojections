@@ -28,6 +28,23 @@ class Renderer {
         // TODO: update any transformations needed for animation
     }
 
+    generateCircle(num_sides, model) {
+        let vertices = [];
+        for (let i = 0; i < num_sides; i++) {
+            if ( top_bot == 1 && i == 0 ) { // generating vertices of bottom face
+                h = -h;
+            }
+            let currentTheta = (i / num_sides) * (2 * Math.PI);
+            vertices.push( CG.Vector4( model.center[0] + model.radius * Math.cos(currentTheta),
+                                    model.center[1] + h,
+                                    model.center[2] + model.radius * Math.sin(currentTheta), 
+                                    1 ) );
+        }
+        console.log('here');
+        return vertices;
+    }
+
+
     generateModel(model, new_model) {
         let center = model.center;
         let vertices = [];
@@ -75,18 +92,62 @@ class Renderer {
                                                1 ) );
                 }
             }
+            // loop through model.sides to generate these
             edges.push( [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0] );
             edges.push( [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 12] );
+            // edges.push( [0,12]);
+            // add the edges between the vertices
+
+        } else if (model.type == "sphere") {
+            // let slices = model.slices;
+            // let stacks = model.stacks;
+            // let radius = model.radius;
+            // let bottom = model.center[1]-radius;
+
+            // for (let i = 0; i < 4; i++) {
+            //     let currentTheta = (i / stacks) * (2 * Math.PI);
+            //     vertices.push( CG.Vector4( model.center[0] + model.radius * Math.cos(currentTheta),
+            //                                bottom + (model.radius*2)/(stacks+1)*(i+1),
+            //                                model.center[2] + model.radius * Math.sin(currentTheta), 
+            //                                1 ) );
+            // }
+
+            // edges.push( [0, 1]);
+
+
+        } else if (model.type == "cone") {
+
+
         }
         new_model.vertices = vertices;
         new_model.edges = edges;
     }
+    
 
     //
     rotateLeft() {
-        let omega = Math.PI/16
-        this.scene.view.srp.x = this.scene.view.srp.x*Math.cos(omega) - this.scene.view.srp.z*Math.sin(omega);
-        this.scene.view.srp.z = this.scene.view.srp.x*Math.sin(omega) + this.scene.view.srp.z*Math.cos(omega);
+        let omega = Math.PI/16;
+        // translate SRP to origin
+        let srp = this.scene.view.srp;
+
+        let translation_matrix = new Matrix(4,4);
+        CG.mat4x4Translate(translation_matrix, srp.x*-1, srp.y*-1, srp.z*-1);
+        let origin_srp = Matrix.multiply([translation_matrix, CG.Vector4(srp.x, srp.y, srp.z, 1)])
+        // console.log("origin:");
+        // console.log(origin_srp);
+        
+        //rotate SRP at origin
+        let rotation_matrix = new Matrix(4,4);
+        CG.mat4x4RotateY(rotation_matrix, omega);
+        console.log(rotation_matrix);
+        let rotated_around_origin = Matrix.multiply([rotation_matrix, origin_srp]); // [origin_srp.x, origin_srp.y, origin_srp.z, 1]])
+        // console.log(rotated_around_origin);
+
+        //trasnlate SRP back to original location
+        let translation_matrix_2 = CG.Vector4(4,1);
+        CG.mat4x4Translate(translation_matrix_2, origin_srp[0]*-1, origin_srp[1]*-1, origin_srp[2]*-1)
+
+        this.scene.view.srp = translation_matrix_2;
         this.draw();
     }
     
@@ -143,8 +204,6 @@ class Renderer {
 
             //   * For (each line segment in) each edge
             for (let k=0; k<this.scene.models[i].edges.length; k++) {
-                // Clip each edge
-                    // Do this part last/later
 
                 // loop through the vertices in each edge which have number that correspond to the vertices...
                 // For each line segment (in each edge)
@@ -155,6 +214,35 @@ class Renderer {
                     let vertex_from_number = vertices[vertex_number]; // using this number, get its corresponding Vector
                     actual_vertices.push(vertex_from_number); // push the actual vertex, a Vector, onto the list
                 }
+
+                // the actual_vertices correspond to the edge --> line
+                console.log("actual vertices");
+                console.log(actual_vertices);
+
+                let clipped_vertices = [];
+
+                //loop through the actual_vertices and clip each line
+                for (let p=0; p<actual_vertices.length-1; p++) {
+                    let line = {pt0: actual_vertices[i], pt1: actual_vertices[i+1]}
+
+                    let new_line = this.clipLinePerspective(line, this.scene.view.clip[4]);
+                    if (new_line != null) {
+                        clipped_vertices.push(new_line[0]);
+                        clipped_vertices.push(newline[1]);
+                    }
+                }   
+
+
+
+
+               // line:         object {pt0: Vector4, pt1: Vector4}
+                    // z_min:        float (near clipping plane in canonical view volume)
+                // Clip each edge 
+                // we have to send the vertices corresponding to the edge
+                    // Do this part last/later
+
+
+
                 // now our vertices_of_edge are actual Vectors
                 //console.log(actual_vertices);
 
@@ -162,7 +250,6 @@ class Renderer {
                 let vertices_of_edge = []
                 for (let p=0; p<actual_vertices.length; p++) {
                     let mper_vertex = Matrix.multiply([mper_matrix, actual_vertices[p]]);
-                    //console.log(mper_vertex);
                     vertices_of_edge.push(mper_vertex);
                 }
                 //console.log(vertices_of_edge);
@@ -174,9 +261,8 @@ class Renderer {
                     let scaled_vertex = Matrix.multiply([viewport, vertices_of_edge[vtx]]);
                     scaled_vertices.push(scaled_vertex);
                 }
-                //console.log(scaled_vertices);
-                //now all of our vertices are Vectors that are scaled appropraitely and we can draw lines between vertices
 
+                //now all of our vertices are Vectors that are scaled appropraitely and we can draw lines between vertices
                 // draw the line(s)
                 // loop through scaled vertices and draw appropriate lines
                 for (let svtx=0; svtx<scaled_vertices.length-1; svtx++) {
@@ -222,16 +308,79 @@ class Renderer {
         return outcode;
     }
 
+    calcXYZ(t){
+        let x = pt0.x + t*change_x;
+        let y = pt0.y + t*change_y;
+        let z = pt0.z + t*change_z;
+        let intersect_pt = {x: x, y:y, z:z};
+        return intersect_pt;    }
+
+    calctLeft(pt0, pt1) {
+        let change_x = (pt1.x-pt0.x);
+        let change_y = (pt1.y-pt0.y);
+        let change_z = (pt1.z-pt0.z);
+        let t = ((-1*pt0.x) + pt0.z)/(change_x-change_z);
+        this.calcXYZ(t);
+    }
+
+    intersectRight(pt0, pt1) {
+        let change_x = (pt1.x-pt0.x);
+        let change_y = (pt1.y-pt0.y);
+        let change_z = (pt1.z-pt0.z);
+        let t = (pt0.x + pt0.z)/(-1*(change_x)-+change_z);
+
+        let x = pt0.x + t*change_x;
+        let y = pt0.y + t*change_y;
+        let z = pt0.z + t*change_z;
+        let intersect_pt = {x: x, y:y, z:z};
+        return intersect_pt;
+    }
+                
+    calculateIntersectionY(pt0, pt1, y_val) {
+        let intersect_pt = {x: 0, y: y_val};
+    
+        let t = (y_val - pt0.y)/(pt1.y - pt0.y);
+        x = (1-t)*pt0.x + t*pt1.x;
+        intersect_pt.x = x;
+    
+        return intersect_pt;
+    }
+
+    calculateIntersectionZ(pt0, pt1, z_val) {
+        let intersect_pt = {x: 0, y: y_val};
+    
+        let t = (y_val - pt0.y)/(pt1.y - pt0.y);
+        x = (1-t)*pt0.x + t*pt1.x;
+        intersect_pt.x = x;
+    
+        return intersect_pt;
+    }
+
+
     // Clip line - should either return a new line (with two endpoints inside view volume)
     //             or null (if line is completely outside view volume)
     // line:         object {pt0: Vector4, pt1: Vector4}
     // z_min:        float (near clipping plane in canonical view volume)
     clipLinePerspective(line, z_min) {
         let result = null;
-        let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
-        let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
+        let p0 = CG.Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
+        let p1 = CG.Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
         let out0 = this.outcodePerspective(p0, z_min);
         let out1 = this.outcodePerspective(p1, z_min);
+
+        let accept = false;
+        while (accept == false) {
+            if ((out0 | out1) == 0) {
+                accept = true;
+                result = line;
+            } else if ((out0 & out1) != 0) {
+                accept = true;
+                result = null;
+            } else {
+                
+            }
+
+        }
         
         // TODO: implement clipping here!
         
@@ -303,6 +452,11 @@ class Renderer {
                 this.generateModel(scene.models[i], model);
             } else if (model.type === 'cylinder') {
                 this.generateModel(scene.models[i], model);
+            } else if (model.type === 'cone') {
+                this.generateModel(scene.models[i], model);
+            } else if (model.type === 'sphere') {
+                this.generateModel(scene.models[i], model);
+                console.log('sphere');
             } else {
                 model.center = CG.Vector4(scene.models[i].center[0],
                                        scene.models[i].center[1],
