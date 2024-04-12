@@ -332,7 +332,7 @@ class Renderer {
         return intersect_pt;
     }
 
-    calculateIntersectionZ(pt0, pt1, z_val) {
+    intersectNear(pt0, pt1, z_val) {
         let intersect_pt = {x: 0, y: y_val};
     
         let t = (y_val - pt0.y)/(pt1.y - pt0.y);
@@ -341,6 +341,7 @@ class Renderer {
     
         return intersect_pt;
     }
+
 
 
     // Clip line - should either return a new line (with two endpoints inside view volume)
