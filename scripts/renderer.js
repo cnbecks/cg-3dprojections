@@ -197,7 +197,7 @@ class Renderer {
         for (let i=0; i< this.scene.models.length; i++) {
             //loop through each vertex in the model
             let vertices = [];
-            for (let j=0; j<this.scene.models[i].vertices.length; j++){
+            for (let j=0; j<this.scene.models[i].vertices.length; j++) { // 0-4 = back, 5-9 = front
                 let new_vertex = Matrix.multiply([perspective_matrix, this.scene.models[i].vertices[j]]);
                 vertices.push(new_vertex);       
             }
@@ -216,16 +216,11 @@ class Renderer {
                 }
 
                 // the actual_vertices correspond to the edge --> line
-                // console.log("actual vertices");
-                // console.log(actual_vertices);
-
                 let clipped_vertices = [];
                 //loop through the actual_vertices and clip each line
                 for (let i=0; i<actual_vertices.length-1; i++) {
                     let line = {pt0: actual_vertices[i], pt1: actual_vertices[i+1]}
                     let new_line = this.clipLinePerspective(line, this.scene.view.clip[4]);
-                    console.log("new line:");
-                    console.log(new_line);
                     if (new_line != null) {
                         clipped_vertices.push(new_line.pt0);
                         clipped_vertices.push(new_line.pt1);
@@ -302,11 +297,11 @@ class Renderer {
         let x = pt0.x + t*change_x;
         let y = pt0.y + t*change_y;
         let z = pt0.z + t*change_z;
-        let intersect_pt = CG.Vector3(x, y,z);
+        let intersect_pt = CG.Vector3(x, y, z);
         return intersect_pt;
     }
 
-    calctLeft(pt0, pt1) {
+    calctLeft(pt0, pt1) { 
         let change_x = (pt1.x-pt0.x);
         let change_y = (pt1.y-pt0.y);
         let change_z = (pt1.z-pt0.z);
@@ -367,8 +362,9 @@ class Renderer {
 
         let accept = false;
         let count = 0;
-        while (count < 4) {
-            console.log('while');
+        while (count < 20) {
+            out0 = this.outcodePerspective(p0, z_min); // each time we loop we have to check the outcodes!
+            out1 = this.outcodePerspective(p1, z_min);
             if ((out0 | out1) == 0) {
                 accept = true;
                 result ={pt0: CG.Vector4(p0.x, p0.y, p0.z, 0), pt1: CG.Vector4(p1.x, p1.y, p1.z, 0)};
@@ -405,11 +401,6 @@ class Renderer {
             } else if (out1 == NEAR) {
                 p1 = this.calctNear(p1, p0, z_min);
             }
-            console.log('p0');
-            console.log(p0);
-            console.log(p1);
-
-
             count = count+1;
         }
     }
