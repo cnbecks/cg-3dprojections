@@ -208,19 +208,25 @@ class Renderer {
                 // loop through the vertices in each edge which have number that correspond to the vertices...
                 // For each line segment (in each edge)
                 let actual_vertices = []; //actual vertices for the edge
+                let actual_edges = [];
                 for (let v=0; v<this.scene.models[i].edges[k].length; v++) {
                     // use the vertex numbers in the edge to create a list with the actual vertices
                     let vertex_number = this.scene.models[i].edges[k][v]; //in model i, in the edge k, get the vertex number v
+                    actual_edges.push(this.scene.models[i].edges[k][v]);
                     let vertex_from_number = vertices[vertex_number]; // using this number, get its corresponding Vector
                     actual_vertices.push(vertex_from_number); // push the actual vertex, a Vector, onto the list
                 }
+
+                console.log("actual edges");
+                console.log(actual_edges);
 
                 // the actual_vertices correspond to the edge --> line
                 let clipped_vertices = [];
                 //loop through the actual_vertices and clip each line
                 for (let i=0; i<actual_vertices.length-1; i++) {
                     let line = {pt0: actual_vertices[i], pt1: actual_vertices[i+1]}
-                    let new_line = this.clipLinePerspective(line, this.scene.view.clip[4]);
+                    let z_min = (-1 * this.scene.view.clip[4]) / this.scene.view.clip[5]; // -near/far
+                    let new_line = this.clipLinePerspective(line, z_min);
                     if (new_line != null) {
                         clipped_vertices.push(new_line.pt0);
                         clipped_vertices.push(new_line.pt1);
@@ -278,13 +284,13 @@ class Renderer {
         else if (vertex.x > (-vertex.z + FLOAT_EPSILON)) {
             outcode += RIGHT;
         }
-        if (vertex.y < (vertex.z - FLOAT_EPSILON)) {
+        else if (vertex.y < (vertex.z - FLOAT_EPSILON)) {
             outcode += BOTTOM;
         }
         else if (vertex.y > (-vertex.z + FLOAT_EPSILON)) {
             outcode += TOP;
         }
-        if (vertex.z < (-1.0 - FLOAT_EPSILON)) {
+        else if (vertex.z < (-1.0 - FLOAT_EPSILON)) {
             outcode += FAR;
         }
         else if (vertex.z > (z_min + FLOAT_EPSILON)) {
@@ -360,19 +366,20 @@ class Renderer {
         let out0 = this.outcodePerspective(p0, z_min);
         let out1 = this.outcodePerspective(p1, z_min);
 
-        let accept = false;
-        let count = 0;
-        while (count < 20) {
+        let deviation = 0.001 // to remove lines when p0 basically == p1
+        while (1) {
+            p0 = CG.Vector3( parseFloat(p0.x.toFixed(3)), parseFloat(p0.y.toFixed(3)), parseFloat(p0.z.toFixed(3)) );
+            p1 = CG.Vector3( parseFloat(p1.x.toFixed(3)), parseFloat(p1.y.toFixed(3)), parseFloat(p1.z.toFixed(3)) );
             out0 = this.outcodePerspective(p0, z_min); // each time we loop we have to check the outcodes!
             out1 = this.outcodePerspective(p1, z_min);
             if ((out0 | out1) == 0) {
-                accept = true;
                 result ={pt0: CG.Vector4(p0.x, p0.y, p0.z, 0), pt1: CG.Vector4(p1.x, p1.y, p1.z, 0)};
-                return result
-            } else if ((out0 & out1) != 0) {
-                accept = true;
                 return result;
-            }
+            } else if ( (Math.abs(p0.x - p1.x) < deviation) && (Math.abs(p0.y - p1.y) < deviation) && (Math.abs(p0.z - p1.z) < deviation) ) {
+                return result;
+            } else if ((out0 & out1) != 0) { 
+                return result;
+            } 
 
             if (out0 == LEFT) {
                 p0 = this.calctLeft(p0, p1);
@@ -384,7 +391,7 @@ class Renderer {
                 p0 = this.calctTop(p0, p1);
             } else if (out0 == FAR) {
                 p0 = this.calctFar(p0, p1);
-            } else if (out0 == NEAR) {
+            } else if ((out0 == NEAR)) { 
                 p0 = this.calctNear(p0, p1, z_min);
             }
 
@@ -398,10 +405,9 @@ class Renderer {
                 p1 = this.calctTop(p1, p0);
             } else if (out1 == FAR) {
                 p1 = this.calctFar(p1, p0);
-            } else if (out1 == NEAR) {
+            } else if ((out1 == NEAR)) { 
                 p1 = this.calctNear(p1, p0, z_min);
             }
-            count = count+1;
         }
     }
 
