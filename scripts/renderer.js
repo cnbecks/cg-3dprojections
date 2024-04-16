@@ -33,20 +33,19 @@ class Renderer {
             //loop through each vertex in the model
             let vertices = [];
             for (let j=0; j<this.scene.models[i].vertices.length; j++) { // 0-4 = back, 5-9 = front
-                let new_vertex = Matrix.multiply([perspective_matrix, this.scene.models[i].vertices[j]]);
-                vertices.push(new_vertex);       
+                //let new_vertex = Matrix.multiply([perspective_matrix, this.scene.models[i].vertices[j]]);
+                //vertices.push(new_vertex);       
             }
 
             //perform the tranformation on each vertex? and then draw those vertices?
 
         }
 
-
         let cube = this.scene.models[0];
         // I can't access animation? 
         // should I have a transform variabel?
         // do I need to transform all of its vertices? and then call draw after I do this? 
-        console.log(cube);
+        //console.log(cube);
 
         let theta = 10;
         let theta_new = theta * time / 100000;
@@ -62,27 +61,12 @@ class Renderer {
         // this.models.slide1[0].transform = transform_final;
     }
 
-    generateCircle(num_sides, model) {
-        let vertices = [];
-        for (let i = 0; i < num_sides; i++) {
-            if ( top_bot == 1 && i == 0 ) { // generating vertices of bottom face
-                h = -h;
-            }
-            let currentTheta = (i / num_sides) * (2 * Math.PI);
-            vertices.push( CG.Vector4( model.center[0] + model.radius * Math.cos(currentTheta),
-                                    model.center[1] + h,
-                                    model.center[2] + model.radius * Math.sin(currentTheta), 
-                                    1 ) );
-        }
-        console.log('here');
-        return vertices;
-    }
-
-
     generateModel(model, new_model) {
         let center = model.center;
         let vertices = [];
         let edges = [];
+
+        //---------------- CUBE ----------------//
         if (model.type == "cube") {
             // get required dimensions
             let w = model.width/2;
@@ -109,9 +93,39 @@ class Renderer {
             edges.push( [2, 6] );
             edges.push( [3, 7] );
 
+        //---------------- CONE ----------------//
+        } else if (model.type == "cone") {
+            let h = model.height/2;
+            let r = model.radius;
+            
+            // generate circular face
+            for (let i = 0; i < model.sides; i++) {
+                let currentTheta = (i / model.sides) * (2 * Math.PI);
+                vertices.push( CG.Vector4( model.center[0] + model.radius * Math.cos(currentTheta),
+                                           model.center[1] + h,
+                                           model.center[2] + model.radius * Math.sin(currentTheta), 
+                                           1 ) );
+            }
+
+            // push cone tip coordinate
+            vertices.push( CG.Vector4( model.center[0],
+                                       model.center[1] - h,
+                                       model.center[2], 
+                                       1 ) );
+
+            // create edge matrices
+            let cir_edge = [];
+            for (let num_sd = 0; num_sd < model.sides; num_sd++) {
+                cir_edge.push(num_sd);                         // create circle face edge
+                edges.push( [cir_edge[num_sd], model.sides] ); // create top to bottom edges
+            }
+            cir_edge.push(0);
+            edges.push(cir_edge);
+
+        //---------------- CYLINDER ----------------//
         } else if (model.type == "cylinder") {
-            let h = model.height/2
-            let r = model.radius
+            let h = model.height/2;
+            let r = model.radius;
             
             // generate top and bottom circular faces
             for (let top_bot = 0; top_bot < 2; top_bot++) {
@@ -126,32 +140,78 @@ class Renderer {
                                                1 ) );
                 }
             }
-            // loop through model.sides to generate these
-            edges.push( [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0] );
-            edges.push( [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 12] );
-            // edges.push( [0,12]);
-            // add the edges between the vertices
 
+            // create edge matrices
+            let top_edge = [];
+            let bot_edge = [];
+            for (let num_sd = 0; num_sd < model.sides; num_sd++) {
+                top_edge.push(num_sd);                              // create top circle edges
+                bot_edge.push(model.sides + num_sd);                // create bottom circle edges
+                edges.push( [top_edge[num_sd], bot_edge[num_sd]] ); // create top to bottom edges
+            }
+            top_edge.push(0);
+            edges.push(top_edge);
+            bot_edge.push(model.sides);
+            edges.push(bot_edge);
+
+        //---------------- SPHERE ----------------//
         } else if (model.type == "sphere") {
-            // let slices = model.slices;
-            // let stacks = model.stacks;
-            // let radius = model.radius;
-            // let bottom = model.center[1]-radius;
+            let r = model.radius;
+            let h = (2 * r) / model.stacks;
+            
+            // generate top and bottom circular faces
+            for (let stack = 1; stack < model.stacks; stack++) {
+                let stack_edge = [];
+                let middle = Math.floor( model.stacks / 2 );
+                for (let i = 0; i < model.slices; i++) {
+                    let current_radius;
+                    if ( stack == middle && (model.stacks / 2) != middle) { // middle of the sphere with an ODD number of stacks
+                        current_radius = r;
+                    } else if ( stack > middle || (stack == middle && (model.stacks / 2) == middle) ) { // top half of the sphere
+                        current_radius = Math.round( Math.sqrt( (r**2) - ((h*stack)-r)**2 ) ); // solve for b in c^2 = a^2 + b^2
+                    } else { // bottom half of the sphere
+                        current_radius = Math.round( Math.sqrt( (r**2) - (r-(h*stack))**2 ) ); // solve for b in c^2 = a^2 + b^2
+                    }
 
-            // for (let i = 0; i < 4; i++) {
-            //     let currentTheta = (i / stacks) * (2 * Math.PI);
-            //     vertices.push( CG.Vector4( model.center[0] + model.radius * Math.cos(currentTheta),
-            //                                bottom + (model.radius*2)/(stacks+1)*(i+1),
-            //                                model.center[2] + model.radius * Math.sin(currentTheta), 
-            //                                1 ) );
-            // }
+                    let currentTheta = (i / (model.slices)) * (2 * Math.PI);
+                    vertices.push( CG.Vector4( model.center[0] + current_radius * Math.cos(currentTheta),
+                                               model.center[1] - r + (h*stack),
+                                               model.center[2] + current_radius * Math.sin(currentTheta), 
+                                               1 ) );
+                    
+                    // add edges for this stack
+                    stack_edge.push( (model.slices*stack) + i - model.slices ); // add 2 to take into account top and bottom vertices
+                }
+                stack_edge.push(stack_edge[0]);
+                // add stack edges
+                edges.push(stack_edge);
+            }
 
-            // edges.push( [0, 1]);
+            // push top and bottom vertices
+            vertices.push( CG.Vector4( model.center[0],
+                                       model.center[1] - r,
+                                       model.center[2], 
+                                       1 ) );
 
+            vertices.push( CG.Vector4( model.center[0],
+                                       model.center[1] + r,
+                                       model.center[2], 
+                                       1 ) );
 
-        } else if (model.type == "cone") {
+            // get top and nottom edge positions
+            let top_loc = vertices.length-1;
+            let bot_loc = vertices.length-2;
 
-
+            // add slice edges
+            for (let slice = 0; slice < model.slices-1; slice++) {
+                let slice_edge = [];
+                slice_edge.push(bot_loc);
+                for (let i = 0; i < model.stacks-1; i++) {
+                    slice_edge.push(edges[i][slice]);
+                }
+                slice_edge.push(top_loc);
+                edges.push(slice_edge);
+            }
         }
         new_model.vertices = vertices;
         new_model.edges = edges;
@@ -160,6 +220,7 @@ class Renderer {
 
     // calculation bsed on the prp but applying them to the srp
     rotateLeft() {
+        /*
         let omega = Math.PI/3500;
         let prp = this.scene.view.prp;
         let srp = this.scene.view.srp;
@@ -192,11 +253,11 @@ class Renderer {
 
         // ------------ UNDO THE VRC rotation and the translation_matrix ------------------------------
         // undo the the VRC alignement - By setting these values to the opposite of what they were before
-        console.log('R below');
-        console.log(R);
+        //console.log('R below');
+        //console.log(R);
         let undo_R = R.inverse();
-        console.log('inverse R');
-        console.log(undo_R);
+        //console.log('inverse R');
+        //console.log(undo_R);
                         
 
 
@@ -218,13 +279,14 @@ class Renderer {
         this.scene.view.srp.y = translations_without_R.data[1];
         this.scene.view.srp.z = translations_without_R.data[2];
         
-        console.log("SRP without undo_R");
-        console.log(translations_without_R);
-        console.log("SRP with undo_R");
-        console.log(translation_with_undo_R);
+        //console.log("SRP without undo_R");
+        //console.log(translations_without_R);
+        //console.log("SRP with undo_R");
+        //console.log(translation_with_undo_R);
 
         //draw the scene
         this.draw();
+        */
     }
     
     //
@@ -293,9 +355,6 @@ class Renderer {
                     actual_vertices.push(vertex_from_number); // push the actual vertex, a Vector, onto the list
                 }
 
-                // console.log("actual edges");
-                // console.log(actual_edges);
-
                 // the actual_vertices correspond to the edge --> line
                 let clipped_vertices = [];
                 //loop through the actual_vertices and clip each line
@@ -309,9 +368,6 @@ class Renderer {
                     }
                 }   
                 actual_vertices = clipped_vertices;
-                // console.log('after clipping');
-                // console.log(actual_vertices);
-                // now our vertices_of_edge are actual Vectors
 
                 // Project to 2D by multiplying by MPer
                 let vertices_of_edge = []
@@ -319,7 +375,6 @@ class Renderer {
                     let mper_vertex = Matrix.multiply([mper_matrix, actual_vertices[p]]);
                     vertices_of_edge.push(mper_vertex);
                 }
-                //console.log(vertices_of_edge);
 
                 // Translate to viewport
                 let scaled_vertices = [];
@@ -497,7 +552,7 @@ class Renderer {
         let time = timestamp - this.start_time;
         let delta_time = timestamp - this.prev_time;
 
-        console.log(' in anmiate');
+        //console.log('in anmiate');
         // Update transforms for animation
         this.updateTransforms(time, delta_time);
 
@@ -537,6 +592,7 @@ class Renderer {
 
         for (let i = 0; i < scene.models.length; i++) {
             let model = { type: scene.models[i].type };
+            console.log(model.type);
             if (model.type === 'generic') {
                 model.vertices = [];
                 model.edges = JSON.parse(JSON.stringify(scene.models[i].edges));
@@ -557,12 +613,11 @@ class Renderer {
                 this.generateModel(scene.models[i], model);
             } else if (model.type === 'sphere') {
                 this.generateModel(scene.models[i], model);
-                console.log('sphere');
             } else {
-                model.center = CG.Vector4(scene.models[i].center[0],
-                                       scene.models[i].center[1],
-                                       scene.models[i].center[2],
-                                       1);
+                model.center = CG.Vector4( scene.models[i].center[0],
+                                           scene.models[i].center[1],
+                                           scene.models[i].center[2],
+                                           1 );
                 for (let key in scene.models[i]) {
                     if (scene.models[i].hasOwnProperty(key) && key !== 'type' && key != 'center') {
                         model[key] = JSON.parse(JSON.stringify(scene.models[i][key]));
