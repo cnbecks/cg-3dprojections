@@ -3,7 +3,7 @@
         "prp": [0, 0, 10],
         "srp": [0, 0, 0],
         "vup": [0, 1, 0],
-        "clip": [-2, 20, -1, 17, 5, 75]
+        "clip": [-20, 20, -1, 17, 5, 75]
     },
     "models": [
         {
@@ -13,7 +13,12 @@
             "height": 8,
             "depth": 8,
             "vertices": [],
-            "edges": []
+            "edges": [],
+            "animation": {
+                "axis": "y",
+                "rps": 0.5,
+                "transform": null
+            }
         },
         {
             "type": "cylinder",
@@ -34,6 +39,25 @@
             "radius": 10,
             "slices": 1,
             "stacks": 1
+        },
+        {
+            "type": "cube",
+            "center": [40, 10, -10],
+            "width": 8,
+            "height": 20,
+            "depth": 8,
+            "vertices": [],
+            "edges": []
+        },
+        {
+            "type": "cube",
+            "center": [20, 10, -10],
+            "width": 10,
+            "height": 20,
+            "depth": 8,
+            "vertices": [],
+            "edges": []
         }
     ]
+
 }

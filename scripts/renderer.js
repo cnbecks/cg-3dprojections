@@ -26,6 +26,40 @@ class Renderer {
     //
     updateTransforms(time, delta_time) {
         // TODO: update any transformations needed for animation
+
+        
+        // loop through all models, somehow check for animation?
+        for (let i=0; i< this.scene.models.length; i++) {
+            //loop through each vertex in the model
+            let vertices = [];
+            for (let j=0; j<this.scene.models[i].vertices.length; j++) { // 0-4 = back, 5-9 = front
+                let new_vertex = Matrix.multiply([perspective_matrix, this.scene.models[i].vertices[j]]);
+                vertices.push(new_vertex);       
+            }
+
+            //perform the tranformation on each vertex? and then draw those vertices?
+
+        }
+
+
+        let cube = this.scene.models[0];
+        // I can't access animation? 
+        // should I have a transform variabel?
+        // do I need to transform all of its vertices? and then call draw after I do this? 
+        console.log(cube);
+
+        let theta = 10;
+        let theta_new = theta * time / 100000;
+
+        let rotation_x = new Matrix(4,4)
+        let translation_mx = new Matrix(4,4)
+
+        let rotation = CG.mat4x4RotateX(rotation_x, theta_new);
+        let translation_matrix = CG.mat4x4Translate(translation_mx, 10, 10,-30);
+        let transform_final = Matrix.multiply([translation_matrix, rotation, cube]);
+
+        //update the transform somehow...? or should I just multiply the center by this transform?
+        // this.models.slide1[0].transform = transform_final;
     }
 
     generateCircle(num_sides, model) {
@@ -463,6 +497,7 @@ class Renderer {
         let time = timestamp - this.start_time;
         let delta_time = timestamp - this.prev_time;
 
+        console.log(' in anmiate');
         // Update transforms for animation
         this.updateTransforms(time, delta_time);
 
