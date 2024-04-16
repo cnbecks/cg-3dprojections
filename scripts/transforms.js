@@ -20,11 +20,7 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     R.values = [[u.x, u.y, u.z, 0],
              [v.x, v.y, v.z, 0],
              [n.x, n.y, n.z, 0],
-             [0,    0,    0,    0]];
-
-
-    //console.log('R   R')
-    //console.log(R);
+             [0,    0,    0,    1]];
 
 
     // 3. shear such that CW is on the z-axis
