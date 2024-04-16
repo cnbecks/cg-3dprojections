@@ -52,10 +52,15 @@ let app = createApp({
 
 let initial_scene = {
     view: {
-        prp: [10, 9, 0],
-        srp: [10, 9, -30],
-        vup: [0, 1, 0],
-        clip: [-11, 11, -11, 11, 30, 100]
+        // prp: [10, 9, 0],
+        // srp: [10, 9, -30],
+        // vup: [0, 1, 0],
+        // clip: [-11, 11, -11, 11, 30, 100]
+        // Below is from the projection example from the powerpoint
+        prp: [0, 10, -5],
+        srp: [20, 15,-40],
+        vup: [1, 1, 0],
+        clip: [-12, 6, -12, 6, 10, 100]
     },
     models: [
         {

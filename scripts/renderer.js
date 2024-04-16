@@ -124,30 +124,72 @@ class Renderer {
     }
     
 
-    //
+    // calculation bsed on the prp but applying them to the srp
     rotateLeft() {
-        let omega = Math.PI/16;
-        // translate SRP to origin
+        let omega = Math.PI/3500;
+        let prp = this.scene.view.prp;
         let srp = this.scene.view.srp;
 
+        // translate SRP to origin/prp
         let translation_matrix = new Matrix(4,4);
-        CG.mat4x4Translate(translation_matrix, srp.x*-1, srp.y*-1, srp.z*-1);
-        let origin_srp = Matrix.multiply([translation_matrix, CG.Vector4(srp.x, srp.y, srp.z, 1)])
-        // console.log("origin:");
-        // console.log(origin_srp);
+        CG.mat4x4Translate(translation_matrix, -prp.x, -prp.y, -prp.z); // set translation matrix to move the srp back to the origin
+        // This translation_matrix translates the srp to the origin
+
+        // rotate VRC such that (u,v,n) align with (x,y,z)
+        let n = prp.subtract(srp);
+        n.normalize();
+
+        let u = this.scene.view.vup.cross(n);
+        u.normalize();
+
+
+        let v = n.cross(u);
+
+        let R = new Matrix(4,4);
+        R.values = [[u.x, u.y, u.z, 0],
+                [v.x, v.y, v.z, 0],
+                [n.x, n.y, n.z, 0],
+                [0,    0,    0,    0]];
+
+        //now v=y, so rotate around V, which is based on the y-axis
+        let rotation_y = new Matrix(4,4);
+        CG.mat4x4RotateY(rotation_y, omega); //rotate it based on the y-axis now that it is aligned with the v axis
+
+
+        // ------------ UNDO THE VRC rotation and the translation_matrix ------------------------------
+        // undo the the VRC alignement - By setting these values to the opposite of what they were before
+        console.log('R below');
+        console.log(R);
+        let undo_R = R.inverse();
+        console.log('inverse R');
+        console.log(undo_R);
+                        
+
+
+        // undo the translation_matrix
+        let undo_translation_matrix = new Matrix(4,4);
+        CG.mat4x4Translate(undo_translation_matrix, prp.x, prp.y, prp.z); //set the values back to the prp's original values
+
         
-        //rotate SRP at origin
-        let rotation_matrix = new Matrix(4,4);
-        CG.mat4x4RotateY(rotation_matrix, omega);
-        console.log(rotation_matrix);
-        let rotated_around_origin = Matrix.multiply([rotation_matrix, origin_srp]); // [origin_srp.x, origin_srp.y, origin_srp.z, 1]])
-        // console.log(rotated_around_origin);
+        // now apply these transformations to the srp
+        // create Vector4 so that we can extract the values from here to chnage the srp (since the srp is only a Vector3)
+        let vector_4 = CG.Vector4(srp.x, srp.y, srp.z, 1);
+        let translations_without_R = Matrix.multiply([undo_translation_matrix, undo_R, rotation_y, R, translation_matrix, vector_4]);
 
-        //trasnlate SRP back to original location
-        let translation_matrix_2 = CG.Vector4(4,1);
-        CG.mat4x4Translate(translation_matrix_2, origin_srp[0]*-1, origin_srp[1]*-1, origin_srp[2]*-1)
+        let translation_with_undo_R = Matrix.multiply([undo_translation_matrix, undo_R, rotation_y, R, translation_matrix, vector_4]);
 
-        this.scene.view.srp = translation_matrix_2;
+
+        // Set the SRP to the new translated, rotated, then translated back to the srp 
+        this.scene.view.srp.x = translations_without_R.data[0];
+        this.scene.view.srp.y = translations_without_R.data[1];
+        this.scene.view.srp.z = translations_without_R.data[2];
+        
+        console.log("SRP without undo_R");
+        console.log(translations_without_R);
+        console.log("SRP with undo_R");
+        console.log(translation_with_undo_R);
+
+        //draw the scene
         this.draw();
     }
     
@@ -217,8 +259,8 @@ class Renderer {
                     actual_vertices.push(vertex_from_number); // push the actual vertex, a Vector, onto the list
                 }
 
-                console.log("actual edges");
-                console.log(actual_edges);
+                // console.log("actual edges");
+                // console.log(actual_edges);
 
                 // the actual_vertices correspond to the edge --> line
                 let clipped_vertices = [];

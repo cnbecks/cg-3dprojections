@@ -15,11 +15,17 @@ function mat4x4Perspective(prp, srp, vup, clip) {
 
     let v = n.cross(u);
 
+
     let R = new Matrix(4,4);
     R.values = [[u.x, u.y, u.z, 0],
              [v.x, v.y, v.z, 0],
              [n.x, n.y, n.z, 0],
              [0,    0,    0,    0]];
+
+
+    console.log('R   R')
+    console.log(R);
+
 
     // 3. shear such that CW is on the z-axis
     let CW = [(clip[0]+clip[1])/2, (clip[2]+clip[3])/2, -1*clip[4]];
@@ -36,7 +42,7 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     let Sper = new Matrix(4, 4)
     mat4x4Scale(Sper, sperx, spery, sperz);
 
-    let transform = Matrix.multiply([Sper, SHpar, R, Tpar]); 
+    let transform = Matrix.multiply([Sper, SHpar, R, Tpar]);
     return transform;
 }
 
