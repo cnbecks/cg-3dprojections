@@ -1,18 +1,62 @@
 {
     "view": {
-        "prp": [0, 0, 10],
-        "srp": [0, 2, 0],
-        "vup": [0, 1, 0],
-        "clip": [-20, 20, -20, 20, 5, 105]
+    "prp": [-10, 0, 10],
+    "srp": [-10, 0, 0],
+    "vup": [0, 1, 0],
+    "clip": [-20, 20, -20, 20, 5, 75]
     },
     "models": [
-        {            
-            "type": "sphere",
-            "center": [0, 0, -50],
-            "radius": 50,
-            "slices": 30,
-            "stacks": 10
+        {
+            "type":   "cube",
+            "center": [4, 4, -20],
+            "width":  8,
+            "height": 8,
+            "depth":  8,
+            "vertices": [],
+            "edges":  [],
+            "animation": {
+                "axis": "y",
+                "rps": 0.5,
+                "transform": null
+            }
+        },
+        {
+            "type":   "cylinder",
+            "center": [32, 120, -49],
+            "radius": 15,
+            "height": 50,
+            "sides":  12,
+            "animation": {
+                "axis": "y",
+                "rps": 0.5
+            },
+            "vertices": [],
+            "edges":    []
+        },
+        {
+            "type": "cube",
+            "center": [50, 10, -10],
+            "width": 8,
+            "height": 20,
+            "depth": 8,
+            "vertices": [],
+            "edges": []
+        },
+        {
+            "type": "cube",
+            "center": [20, 10, -10],
+            "width": 10,
+            "height": 20,
+            "depth": 8,
+            "vertices": [],
+            "edges": []
+        },
+        {
+            "type": "cone",
+            "center": [-40, 37, -15],
+            "radius": 8,
+            "height": 20,
+            "sides": 17
         }
     ]
-
 }

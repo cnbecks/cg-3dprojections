@@ -17,15 +17,13 @@ function mat4x4Perspective(prp, srp, vup, clip) {
 
 
     let R = new Matrix(4,4);
-    R.values = [[u.x, u.y, u.z, 0],
-             [v.x, v.y, v.z, 0],
-             [n.x, n.y, n.z, 0],
-             [0,    0,    0,    0]];
-
+    R.values = [ [u.x, u.y, u.z, 0],
+                 [v.x, v.y, v.z, 0],
+                 [n.x, n.y, n.z, 0],
+                 [  0,   0,   0, 0] ];
 
     //console.log('R   R')
     //console.log(R);
-
 
     // 3. shear such that CW is on the z-axis
     let CW = [(clip[0]+clip[1])/2, (clip[2]+clip[3])/2, -1*clip[4]];
@@ -49,23 +47,22 @@ function mat4x4Perspective(prp, srp, vup, clip) {
 // create a 4x4 matrix to project a perspective image on the z=-1 plane
 function mat4x4MPer() {
     let mper = new Matrix(4, 4);
-    mper.values = [[1,0,0,0],
-                [0,1,0,0],
-                [0,0,1,0],
-                [0,0,-1,0]]  // d=-1 because of z plane 
+    mper.values = [ [1,0,0,0],
+                    [0,1,0,0],
+                    [0,0,1,0],
+                    [0,0,-1,0] ]  // d=-1 because of z plane 
     return mper;
 }
 
 // create a 4x4 matrix to translate/scale projected vertices to the viewport (window)
 function mat4x4Viewport(width, height) {
     let viewport = new Matrix(4, 4);
-    viewport.values =  [[width/2,0,0,width/2],
-                    [0,height/2,0,height/2],
-                    [0,0,1,0],
-                    [0,0,0,1]] 
+    viewport.values =  [ [width/2,        0, 0,  width/2],
+                         [      0, height/2, 0, height/2],
+                         [      0,        0, 1,        0],
+                         [      0,        0, 0,        1] ] 
     return viewport;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////////
 // 4x4 Transform Matrices                                                         //
@@ -123,8 +120,8 @@ function mat4x4RotateZ(mat4x4, theta) {
 function mat4x4ShearXY(mat4x4, shx, shy) {
     mat4x4.values = [[1, 0, shx, 0],
                      [0, 1, shy, 0],
-                     [0, 0, 1,   0],
-                     [0, 0, 0,   1]];
+                     [0, 0,   1, 0],
+                     [0, 0,   0, 1]];
 }
 
 // create a new 3-component vector with values x,y,z

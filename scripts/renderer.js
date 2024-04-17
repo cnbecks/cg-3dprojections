@@ -18,47 +18,48 @@ class Renderer {
         this.canvas.height = canvas.height;
         this.ctx = this.canvas.getContext('2d');
         this.scene = this.processScene(scene);
-        this.enable_animation = false;  // <-- disabled for easier debugging; enable for animation
+        this.enable_animation = true;  // <-- disabled for easier debugging; enable for animation
         this.start_time = null;
         this.prev_time = null;
     }
 
     //
     updateTransforms(time, delta_time) {
-        // TODO: update any transformations needed for animation
+        // using time rather than delta time...
+        // NOT dealing with a list of all models, one model at a time
+        let model = this.scene.models[0];
+        if ( model.hasOwnProperty('animation') ) {
+            // set transformation matrix to transport model to the origin
+            let transform = model.animation.transform;
+            transform = new Matrix(4, 4);
+            CG.mat4x4Translate( transform, -1*model.center[0], -1*model.center[1], -1*model.center[2] );
 
-        
-        // loop through all models, somehow check for animation?
-        for (let i=0; i< this.scene.models.length; i++) {
-            //loop through each vertex in the model
-            let vertices = [];
-            for (let j=0; j<this.scene.models[i].vertices.length; j++) { // 0-4 = back, 5-9 = front
-                //let new_vertex = Matrix.multiply([perspective_matrix, this.scene.models[i].vertices[j]]);
-                //vertices.push(new_vertex);       
+            // calculate rotation matrix based on model velocity in rps
+            let theta = ( model.animation.rps / 1000.0 ) * delta_time; // time is in milliseconds
+            if ( theta >= (2*Math.PI) ) {
+                theta = theta - (2*Math.PI); // resets theta after a full circle is complete
+            }
+            // determine which axis the rotation is in to complete matrix calculation
+            let rot_matrix = new Matrix(4, 4);
+            if ( model.animation.axis == "x" ) {
+                CG.mat4x4RotateX( rot_matrix, theta );
+            } else if ( model.animation.axis == "y" ) {
+                CG.mat4x4RotateY( rot_matrix, theta );
+            } else { // model.animation.axis == "z"
+                CG.mat4x4RotateZ( rot_matrix, theta );
             }
 
-            //perform the tranformation on each vertex? and then draw those vertices?
+            //loop through each vertex in the model and apply the series of transforms to each one
+            let updated_vertices = [];
+            for (let j = 0; j < model.vertices.length; j++) { // 0-4 = back, 5-9 = front
+                // calculate reverse translation matrix
+                let rev_transform = new Matrix(4, 4);
+                CG.mat4x4Translate( rev_transform, model.center[0], model.center[1], model.center[2] );
 
-        }
-
-        let cube = this.scene.models[0];
-        // I can't access animation? 
-        // should I have a transform variabel?
-        // do I need to transform all of its vertices? and then call draw after I do this? 
-        //console.log(cube);
-
-        let theta = 10;
-        let theta_new = theta * time / 100000;
-
-        let rotation_x = new Matrix(4,4)
-        let translation_mx = new Matrix(4,4)
-
-        let rotation = CG.mat4x4RotateX(rotation_x, theta_new);
-        let translation_matrix = CG.mat4x4Translate(translation_mx, 10, 10,-30);
-        let transform_final = Matrix.multiply([translation_matrix, rotation, cube]);
-
-        //update the transform somehow...? or should I just multiply the center by this transform?
-        // this.models.slide1[0].transform = transform_final;
+                updated_vertices.push( Matrix.multiply([rev_transform, rot_matrix, transform, model.vertices[j]]) )    
+            }
+            model.vertices = updated_vertices;
+        }  
     }
 
     generateModel(model, new_model) {
@@ -215,83 +216,114 @@ class Renderer {
         }
         new_model.vertices = vertices;
         new_model.edges = edges;
+        new_model.center = center;
     }
     
 
     // calculation bsed on the prp but applying them to the srp
     rotateLeft() {
-        /*
-        let omega = Math.PI/3500;
+        let omega = 10 * Math.PI/180;
         let prp = this.scene.view.prp;
         let srp = this.scene.view.srp;
 
         // translate SRP to origin/prp
         let translation_matrix = new Matrix(4,4);
         CG.mat4x4Translate(translation_matrix, -prp.x, -prp.y, -prp.z); // set translation matrix to move the srp back to the origin
-        // This translation_matrix translates the srp to the origin
 
         // rotate VRC such that (u,v,n) align with (x,y,z)
         let n = prp.subtract(srp);
         n.normalize();
-
         let u = this.scene.view.vup.cross(n);
         u.normalize();
-
-
         let v = n.cross(u);
-
         let R = new Matrix(4,4);
         R.values = [[u.x, u.y, u.z, 0],
                 [v.x, v.y, v.z, 0],
                 [n.x, n.y, n.z, 0],
-                [0,    0,    0,    0]];
+                [0,    0,    0,    1]];
 
-        //now v=y, so rotate around V, which is based on the y-axis
+        let align = Matrix.multiply([R, translation_matrix]);
+
         let rotation_y = new Matrix(4,4);
         CG.mat4x4RotateY(rotation_y, omega); //rotate it based on the y-axis now that it is aligned with the v axis
 
-
         // ------------ UNDO THE VRC rotation and the translation_matrix ------------------------------
         // undo the the VRC alignement - By setting these values to the opposite of what they were before
-        //console.log('R below');
-        //console.log(R);
-        let undo_R = R.inverse();
-        //console.log('inverse R');
-        //console.log(undo_R);
-                        
-
+        // let undo_R = R.inverse();
 
         // undo the translation_matrix
-        let undo_translation_matrix = new Matrix(4,4);
-        CG.mat4x4Translate(undo_translation_matrix, prp.x, prp.y, prp.z); //set the values back to the prp's original values
-
+        // let undo_translation_matrix = translation_matrix.inverse(); //new Matrix(4,4);
+        let undo = align.inverse(); //new Matrix(4,4);
         
         // now apply these transformations to the srp
-        // create Vector4 so that we can extract the values from here to chnage the srp (since the srp is only a Vector3)
-        let vector_4 = CG.Vector4(srp.x, srp.y, srp.z, 1);
-        let translations_without_R = Matrix.multiply([undo_translation_matrix, undo_R, rotation_y, R, translation_matrix, vector_4]);
-
-        let translation_with_undo_R = Matrix.multiply([undo_translation_matrix, undo_R, rotation_y, R, translation_matrix, vector_4]);
-
+        let vector_4 = CG.Vector4(srp.x, srp.y, srp.z, 1); //vector_4 will hold the new values of the srp
+        let translations = Matrix.multiply([undo, rotation_y, align, vector_4]);
 
         // Set the SRP to the new translated, rotated, then translated back to the srp 
-        this.scene.view.srp.x = translations_without_R.data[0];
-        this.scene.view.srp.y = translations_without_R.data[1];
-        this.scene.view.srp.z = translations_without_R.data[2];
-        
-        //console.log("SRP without undo_R");
-        //console.log(translations_without_R);
-        //console.log("SRP with undo_R");
-        //console.log(translation_with_undo_R);
+        this.scene.view.srp.x = translations.x/translations.w;
+        this.scene.view.srp.y = translations.y/translations.w;
+        this.scene.view.srp.z = translations.z/translations.w;
 
-        //draw the scene
+        // hack Dr. Marrinan showed me - call rotateLeft TWICE to avoid the house disappearing problem
+        if (this.rotated == false) { //this.rotated is a global variable
+            this.rotated = true;
+            this.rotateLeft();
+        }
+        this.rotated = false;
         this.draw();
-        */
     }
     
     //
     rotateRight() {
+        let omega = -10 * Math.PI/180;
+        let prp = this.scene.view.prp;
+        let srp = this.scene.view.srp;
 
+        // translate SRP to origin/prp
+        let translation_matrix = new Matrix(4,4);
+        CG.mat4x4Translate(translation_matrix, -prp.x, -prp.y, -prp.z); // set translation matrix to move the srp back to the origin
+
+        // rotate VRC such that (u,v,n) align with (x,y,z)
+        let n = prp.subtract(srp);
+        n.normalize();
+        let u = this.scene.view.vup.cross(n);
+        u.normalize();
+        let v = n.cross(u);
+        let R = new Matrix(4,4);
+        R.values = [[u.x, u.y, u.z, 0],
+                [v.x, v.y, v.z, 0],
+                [n.x, n.y, n.z, 0],
+                [0,    0,    0,    1]];
+
+        let align = Matrix.multiply([R, translation_matrix]);
+
+        let rotation_y = new Matrix(4,4);
+        CG.mat4x4RotateY(rotation_y, omega); //rotate it based on the y-axis now that it is aligned with the v axis
+
+        // ------------ UNDO THE VRC rotation and the translation_matrix ------------------------------
+        // undo the the VRC alignement - By setting these values to the opposite of what they were before
+        // let undo_R = R.inverse();
+
+        // undo the translation_matrix
+        // let undo_translation_matrix = translation_matrix.inverse(); //new Matrix(4,4);
+        let undo = align.inverse(); //new Matrix(4,4);
+        
+        // now apply these transformations to the srp
+        let vector_4 = CG.Vector4(srp.x, srp.y, srp.z, 1); //vector_4 will hold the new values of the srp
+        let translations = Matrix.multiply([undo, rotation_y, align, vector_4]);
+
+        // Set the SRP to the new translated, rotated, then translated back to the srp 
+        this.scene.view.srp.x = translations.x/translations.w;
+        this.scene.view.srp.y = translations.y/translations.w;
+        this.scene.view.srp.z = translations.z/translations.w;
+
+        // hack Dr. Marrinan showed me - call rotateLeft TWICE to avoid the house disappearing problem
+        if (this.rotated == false) { //this.rotated is a global variable
+            this.rotated = true;
+            this.rotateRight();
+        }
+        this.rotated = false;
+        this.draw();
     }
     
     //
@@ -488,8 +520,8 @@ class Renderer {
 
     // Clip line - should either return a new line (with two endpoints inside view volume)
     //             or null (if line is completely outside view volume)
-    // line:         object {pt0: Vector4, pt1: Vector4}
-    // z_min:        float (near clipping plane in canonical view volume)
+    // line:       object {pt0: Vector4, pt1: Vector4}
+    // z_min:      float (near clipping plane in canonical view volume)
     clipLinePerspective(line, z_min) {
         let result = null;
         let p0 = CG.Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
@@ -552,7 +584,6 @@ class Renderer {
         let time = timestamp - this.start_time;
         let delta_time = timestamp - this.prev_time;
 
-        //console.log('in anmiate');
         // Update transforms for animation
         this.updateTransforms(time, delta_time);
 
@@ -592,7 +623,6 @@ class Renderer {
 
         for (let i = 0; i < scene.models.length; i++) {
             let model = { type: scene.models[i].type };
-            console.log(model.type);
             if (model.type === 'generic') {
                 model.vertices = [];
                 model.edges = JSON.parse(JSON.stringify(scene.models[i].edges));
@@ -607,12 +637,24 @@ class Renderer {
                 }
             } else if (model.type === 'cube') {
                 this.generateModel(scene.models[i], model);
+                if (scene.models[i].hasOwnProperty('animation')) {
+                    model.animation = JSON.parse(JSON.stringify(scene.models[i].animation));
+                }
             } else if (model.type === 'cylinder') {
                 this.generateModel(scene.models[i], model);
+                if (scene.models[i].hasOwnProperty('animation')) {
+                    model.animation = JSON.parse(JSON.stringify(scene.models[i].animation));
+                }
             } else if (model.type === 'cone') {
                 this.generateModel(scene.models[i], model);
+                if (scene.models[i].hasOwnProperty('animation')) {
+                    model.animation = JSON.parse(JSON.stringify(scene.models[i].animation));
+                }
             } else if (model.type === 'sphere') {
                 this.generateModel(scene.models[i], model);
+                if (scene.models[i].hasOwnProperty('animation')) {
+                    model.animation = JSON.parse(JSON.stringify(scene.models[i].animation));
+                }
             } else {
                 model.center = CG.Vector4( scene.models[i].center[0],
                                            scene.models[i].center[1],
