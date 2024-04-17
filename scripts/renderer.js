@@ -60,7 +60,46 @@ class Renderer {
                 updated_vertices.push( Matrix.multiply([rev_transform, rot_matrix, transform, model.vertices[j]]) )    
             }
             model.vertices = updated_vertices;
-        }  
+        }
+
+        // ---------- Sphere rotation -----------------
+        if (this.scene.models[5] != null) {
+            let sphere_m = this.scene.models[5];
+            if ( sphere_m.hasOwnProperty('animation') ) {
+                // set transformation matrix to transport model to the origin
+                let transform = sphere_m.animation.transform;
+                transform = new Matrix(4, 4);
+                CG.mat4x4Translate( transform, -1*sphere_m.center[0], -1*sphere_m.center[1], -1*sphere_m.center[2] );
+
+                // calculate rotation matrix based on model velocity in rps
+                let theta = ( sphere_m.animation.rps / 1000.0 ) * delta_time; // time is in milliseconds
+                if ( theta >= (2*Math.PI) ) {
+                    theta = theta - (2*Math.PI); // resets theta after a full circle is complete
+                }
+                // determine which axis the rotation is in to complete matrix calculation
+                let rot_matrix = new Matrix(4, 4);
+                if ( sphere_m.animation.axis == "x" ) {
+                    CG.mat4x4RotateX( rot_matrix, theta );
+                } else if ( sphere_m.animation.axis == "y" ) {
+                    CG.mat4x4RotateY( rot_matrix, theta );
+                } else { // sphere_m.animation.axis == "z"
+                    CG.mat4x4RotateZ( rot_matrix, theta );
+                    console.log('z');
+                }
+
+                //loop through each vertex in the model and apply the series of transforms to each one
+                let updated_vertices = [];
+                for (let j = 0; j < sphere_m.vertices.length; j++) { // 0-4 = back, 5-9 = front
+                    // calculate reverse translation matrix
+                    let rev_transform = new Matrix(4, 4);
+                    CG.mat4x4Translate( rev_transform, sphere_m.center[0], sphere_m.center[1], sphere_m.center[2] );
+
+                    updated_vertices.push( Matrix.multiply([rev_transform, rot_matrix, transform, sphere_m.vertices[j]]) )    
+                }
+                sphere_m.vertices = updated_vertices;
+            }
+        }
+
     }
 
     generateModel(model, new_model) {
