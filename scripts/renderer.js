@@ -223,7 +223,6 @@ class Renderer {
 
     rotateLeft() {
         let omega = 10 * Math.PI/180;
-        let omega = 10 * Math.PI/180;
         let prp = this.scene.view.prp;
         let srp = this.scene.view.srp;
 
@@ -244,9 +243,6 @@ class Renderer {
                 [0,    0,    0,    1]];
 
         let align = Matrix.multiply([R, translation_matrix]);
-                [0,    0,    0,    1]];
-
-        let align = Matrix.multiply([R, translation_matrix]);
 
         let rotation_y = new Matrix(4,4);
         CG.mat4x4RotateY(rotation_y, omega); //rotate it based on the y-axis now that it is aligned with the v axis
@@ -259,12 +255,8 @@ class Renderer {
         // undo the translation_matrix
         // let undo_translation_matrix = translation_matrix.inverse(); //new Matrix(4,4);
         let undo = align.inverse(); //new Matrix(4,4);
-        // let undo_translation_matrix = translation_matrix.inverse(); //new Matrix(4,4);
-        let undo = align.inverse(); //new Matrix(4,4);
         
         // now apply these transformations to the srp
-        let vector_4 = CG.Vector4(srp.x, srp.y, srp.z, 1); //vector_4 will hold the new values of the srp
-        let translations = Matrix.multiply([undo, rotation_y, align, vector_4]);
         let vector_4 = CG.Vector4(srp.x, srp.y, srp.z, 1); //vector_4 will hold the new values of the srp
         let translations = Matrix.multiply([undo, rotation_y, align, vector_4]);
 
