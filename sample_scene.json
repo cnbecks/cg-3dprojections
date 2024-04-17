@@ -57,6 +57,18 @@
             "radius": 8,
             "height": 20,
             "sides": 17
+        },
+        {            
+            "type":   "sphere",
+            "center": [-50, -20, -40],
+            "radius": 30,
+            "slices": 20,
+            "stacks": 8,
+            "animation": {
+                "axis": "z",
+                "rps": 0.5,
+                "transform": null
+            }
         }
     ]
 }
