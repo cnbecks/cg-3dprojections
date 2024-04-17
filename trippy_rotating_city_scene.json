@@ -39,7 +39,12 @@
             "height": 40,
             "depth": 8,
             "vertices": [],
-            "edges": []
+            "edges": [],
+            "animation": {
+                "axis": "x",
+                "rps": 0.5,
+                "transform": null
+            }   
         },
         {
             "type": "cone",
@@ -60,7 +65,12 @@
             "height": 100,
             "depth": 8,
             "vertices": [],
-            "edges": []
+            "edges": [],
+            "animation": {
+                "axis": "x",
+                "rps": 0.5,
+                "transform": null
+            }
         },
         {
             "type": "cone",
@@ -81,7 +91,12 @@
             "height": 160,
             "depth": 8,
             "vertices": [],
-            "edges": []
+            "edges": [],
+            "animation": {
+                "axis": "z",
+                "rps": 0.5,
+                "transform": null
+            }
         },
         {
             "type": "cone",
@@ -144,7 +159,12 @@
             "height": 40,
             "depth": 8,
             "vertices": [],
-            "edges": []
+            "edges": [],
+            "animation": {
+                "axis": "x",
+                "rps": 0.5,
+                "transform": null
+            }
         },
         {
             "type": "cone",
@@ -165,7 +185,12 @@
             "height": 100,
             "depth": 8,
             "vertices": [],
-            "edges": []
+            "edges": [],
+            "animation": {
+                "axis": "x",
+                "rps": 0.5,
+                "transform": null
+            }
         },
         {
             "type": "cone",
@@ -186,7 +211,12 @@
             "height": 160,
             "depth": 8,
             "vertices": [],
-            "edges": []
+            "edges": [],
+            "animation": {
+                "axis": "z",
+                "rps": 0.5,
+                "transform": null
+            }
         },
         {
             "type": "cone",
@@ -195,7 +225,7 @@
             "height": 20,
             "sides": 17,
             "animation": {
-                "axis": "y",
+                "axis": "",
                 "rps": 0.5,
                 "transform": null
             }
