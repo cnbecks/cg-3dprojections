@@ -88,7 +88,7 @@
             "type": "cube",
             "center": [70, -5, -20],
             "width": 8,
-            "height": 160,
+            "height": 150,
             "depth": 8,
             "vertices": [],
             "edges": [],
@@ -208,7 +208,7 @@
             "type": "cube",
             "center": [-80, -5, -20],
             "width": 8,
-            "height": 160,
+            "height": 150,
             "depth": 8,
             "vertices": [],
             "edges": [],
@@ -229,6 +229,113 @@
                 "rps": 0.5,
                 "transform": null
             }
+        },
+
+
+
+        {
+            "type":   "cube",
+            "center": [4, 4, 30],
+            "width":  8,
+            "height": 8,
+            "depth":  8,
+            "vertices": [],
+            "edges":  [],
+            "animation": {
+                "axis": "x",
+                "rps": 0.5,
+                "transform": null
+            }
+        },
+        {
+            "type": "cone",
+            "center": [4, 18, 30],
+            "radius": 8,
+            "height": 20,
+            "sides": 17,
+            "animation": {
+                "axis": "x",
+                "rps": 0.5,
+                "transform": null
+            }
+        },
+        {
+            "type": "cube",
+            "center": [20, 10, 30],
+            "width": 8,
+            "height": 40,
+            "depth": 8,
+            "vertices": [],
+            "edges": [],
+            "animation": {
+                "axis": "y",
+                "rps": 0.5,
+                "transform": null
+            }   
+        },
+        {
+            "type": "cone",
+            "center": [20, 40, 30],
+            "radius": 8,
+            "height": 20,
+            "sides": 17,
+            "animation": {
+                "axis": "x",
+                "rps": 0.5,
+                "transform": null
+            }
+        },
+        {
+            "type": "cube",
+            "center": [40, 0, 30],
+            "width": 8,
+            "height": 100,
+            "depth": 8,
+            "vertices": [],
+            "edges": [],
+            "animation": {
+                "axis": "y",
+                "rps": 0.5,
+                "transform": null
+            }
+        },
+        {
+            "type": "cone",
+            "center": [40, 60, 30],
+            "radius": 8,
+            "height": 20,
+            "sides": 17,
+            "animation": {
+                "axis": "x",
+                "rps": 0.5,
+                "transform": null
+            }
+        },
+
+        {            
+            "type":   "sphere",
+            "center": [40, -40, 70],
+            "radius": 30,
+            "slices": 20,
+            "stacks": 8,
+            "animation": {
+                "axis": "z",
+                "rps": 0.5,
+                "transform": null
+            }
+        },
+        {            
+            "type":   "sphere",
+            "center": [-40, -40, 70],
+            "radius": 30,
+            "slices": 6,
+            "stacks": 10,
+            "animation": {
+                "axis": "z",
+                "rps": 0.5,
+                "transform": null
+            }
         }
+
     ]
 }

@@ -263,7 +263,7 @@ class Renderer {
     
 
     rotateLeft() {
-        let omega = 2 * Math.PI/180;
+        let omega = 7 * Math.PI/180;
         let prp = this.scene.view.prp;
         let srp = this.scene.view.srp;
 
@@ -318,7 +318,7 @@ class Renderer {
     
 
     rotateRight() {
-        let omega = -2 * Math.PI/180;
+        let omega = -7 * Math.PI/180;
         let prp = this.scene.view.prp;
         let srp = this.scene.view.srp;
 
@@ -360,7 +360,7 @@ class Renderer {
         this.scene.view.srp.y = translations.y/translations.w;
         this.scene.view.srp.z = translations.z/translations.w;
 
-        // hack Dr. Marrinan showed me - call rotateLeft TWICE to avoid the house disappearing problem
+        // hack Dr. Marrinan showed me - call rotateRight TWICE to avoid the house disappearing problem
         if (this.rotated == false) { //this.rotated is a global variable
             this.rotated = true;
             this.rotateRight();
