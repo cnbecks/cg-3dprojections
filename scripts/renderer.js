@@ -31,8 +31,6 @@ class Renderer {
         for (let i=0; i<this.scene.models.length; i++) {
             let model = this.scene.models[i];
             if ( model.hasOwnProperty('animation') ) {
-                console.log(model)
-                console.log('model');
                 // set transformation matrix to transport model to the origin
                 let transform = model.animation.transform;
                 transform = new Matrix(4, 4);
@@ -484,20 +482,20 @@ class Renderer {
     // get ONE outcode for a vertex (program handles one plane at a time)
     // vertex:       Vector4 (transformed vertex in homogeneous coordinates)
     // z_min:        float (near clipping plane in canonical view volume)
-    outcodePerspective(vertex, z_min) {
+    outcodePerspective(vertex, z_min, select = 0) {
         let outcode = 0;
-        if (vertex.z < (-1.0 - FLOAT_EPSILON)) {
-            outcode += FAR;
-        } else if (vertex.z > (z_min + FLOAT_EPSILON)) {
-            outcode += NEAR;
-        } else if (vertex.x < (vertex.z - FLOAT_EPSILON)) {
+        if ( vertex.x < (vertex.z - FLOAT_EPSILON) && (select == 0 || select == 1) ) {
             outcode += LEFT;
-        } else if (vertex.x > (-vertex.z + FLOAT_EPSILON)) {
+        } else if ( vertex.x > (-vertex.z + FLOAT_EPSILON) && (select == 0 || select == 1) ) {
             outcode += RIGHT;
-        } else if (vertex.y < (vertex.z - FLOAT_EPSILON)) {
+        } else if ( vertex.y < (vertex.z - FLOAT_EPSILON) && (select == 0 || select == 2) ) {
             outcode += BOTTOM;
-        } else if (vertex.y > (-vertex.z + FLOAT_EPSILON)) {
+        } else if ( vertex.y > (-vertex.z + FLOAT_EPSILON) && (select == 0 || select == 2) ) {
             outcode += TOP;
+        } else if ( vertex.z < (-1.0 - FLOAT_EPSILON) && (select == 0 || select == 3) ) {
+            outcode += FAR;
+        } else if ( vertex.z > (z_min + FLOAT_EPSILON) && (select == 0 || select == 3) ) {
+            outcode += NEAR;
         }
         return outcode;
     }
@@ -526,9 +524,9 @@ class Renderer {
     }
 
     calcXYZ(pt0, change_x, change_y, change_z, t){
-        let x = pt0.x + t*change_x;
-        let y = pt0.y + t*change_y;
-        let z = pt0.z + t*change_z;
+        let x = pt0.x + (t*change_x);
+        let y = pt0.y + (t*change_y);
+        let z = pt0.z + (t*change_z);
         let intersect_pt = CG.Vector3(x, y, z);
         return intersect_pt;
     }
@@ -594,105 +592,60 @@ class Renderer {
         let out0 = this.outcodePerspective(p0, z_min);
         let out1 = this.outcodePerspective(p1, z_min);
 
-        let test_out0 = this.outcodeTest(p0, z_min);
-        let test_out1 = this.outcodeTest(p1, z_min);
+        // preliminary trivially accept
+        if ((out0 | out1) == 0) {
+            result = {pt0: CG.Vector4(p0.x, p0.y, p0.z, 0), pt1: CG.Vector4(p1.x, p1.y, p1.z, 0)};
+            return result;
+        } 
 
-        while (1) {
-            p0 = CG.Vector3( parseFloat(p0.x.toFixed(3)), parseFloat(p0.y.toFixed(3)), parseFloat(p0.z.toFixed(3)) );
-            p1 = CG.Vector3( parseFloat(p1.x.toFixed(3)), parseFloat(p1.y.toFixed(3)), parseFloat(p1.z.toFixed(3)) );
-            out0 = this.outcodePerspective(p0, z_min); // each time we loop we have to check the outcodes!
-            out1 = this.outcodePerspective(p1, z_min);
+        // preliminary trivially reject
+        if ((this.outcodeTest(p0, z_min) & this.outcodeTest(p1, z_min)) != 0) { 
+            return result;
+        }
 
-            if ((out0 | out1) == 0) {
-                result ={pt0: CG.Vector4(p0.x, p0.y, p0.z, 0), pt1: CG.Vector4(p1.x, p1.y, p1.z, 0)};
-                return result;
-            } else if ((test_out0 & test_out1) != 0) { 
-                return result;
-            } 
-
-            let both = false;
-            if (out0 != 0 && out1 != 0) { // if both points are out, don't overwrite the first one changed!
-                both = true;
-            }
-
-            let og_p0 = CG.Vector3(line.pt0.x, line.pt0.y, line.pt0.z);
-            let og_p1 = CG.Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
-
+        for (let i = 0; i < 3; i++) {
             if (out0 == LEFT) {
-                if (both == true && out1 == RIGHT) {
-                    p0 = this.calctLeft(p0, og_p1);
-                } else {
-                    p0 = this.calctLeft(p0, p1);
-                }
+                p0 = this.calctLeft(p0, p1);
             } else if (out0 == RIGHT) {
-                if (both == true && out1 == LEFT) {
-                    p0 = this.calctRight(p0, og_p1);
-                } else {
-                    p0 = this.calctRight(p0, p1);
-                }
+                p0 = this.calctRight(p0, p1);
             } else if (out0 == BOTTOM) {
-                if (both == true && out1 == TOP) {
-                    p0 = this.calctBottom(p0, og_p1);
-                } else {
-                    p0 = this.calctBottom(p0, p1);
-                }
+                p0 = this.calctBottom(p0, p1);
             } else if (out0 == TOP) {
-                if (both == true && out1 == BOTTOM) {
-                    p0 = this.calctTop(p0, og_p1);
-                } else {
-                    p0 = this.calctTop(p0, p1);
-                }
+                p0 = this.calctTop(p0, p1);
             } else if (out0 == FAR) {
-                if (both == true && out1 == NEAR) {
-                    p0 = this.calctFar(p0, og_p1);
-                } else {
-                    p0 = this.calctFar(p0, p1);
-                }
+                p0 = this.calctFar(p0, p1);
             } else if (out0 == NEAR) { 
-                if (both == true && out1 == FAR) {
-                    p0 = this.calctNear(p0, og_p1);
-                } else {
-                    p0 = this.calctNear(p0, p1, z_min);
-                }
-            } 
-            
-            if (out1 == LEFT) {
-                if (both == true && out0 == RIGHT) {
-                    p1 = this.calctLeft(p1, og_p0);
-                } else {
-                    p1 = this.calctLeft(p1, p0);
-                }
-            } else if (out1 == RIGHT) {
-                if (both == true && out0 == LEFT) {
-                    p1 = this.calctRight(p1, og_p0);
-                } else {
-                    p1 = this.calctRight(p1, p0);
-                }
-            } else if (out1 == BOTTOM) {
-                if (both == true && out0 == TOP) {
-                    p1 = this.calctBottom(p1, og_p0);
-                } else {
-                    p1 = this.calctBottom(p1, p0);
-                }
-            } else if (out1 == TOP) {
-                if (both == true && out0 == BOTTOM) {
-                    p1 = this.calctTop(p1, og_p0);
-                } else {
-                    p1 = this.calctTop(p1, p0);
-                }
-            } else if (out1 == FAR) {
-                if (both == true && out0 == NEAR) {
-                    p1 = this.calctFar(p1, og_p0);
-                } else {
-                    p1 = this.calctFar(p1, p0);
-                }
-            } else if (out1 == NEAR) { 
-                if (both == true && out0 == FAR) {
-                    p1 = this.calctNear(p1, og_p0, z_min);
-                } else {
-                    p1 = this.calctNear(p1, p0, z_min);
-                }
+                p0 = this.calctNear(p0, p1, z_min);
             }
+            out0 = this.outcodePerspective(p0, z_min);
+        }
+        
+        for (let i = 0; i < 3; i++) {
+            if (out1 == LEFT) {
+                p1 = this.calctLeft(p1, p0);
+            } else if (out1 == RIGHT) {
+                p1 = this.calctRight(p1, p0);
+            } else if (out1 == BOTTOM) {
+                p1 = this.calctBottom(p1, p0);
+            } else if (out1 == TOP) {
+                p1 = this.calctTop(p1, p0);
+            } else if (out1 == FAR) {
+                p1 = this.calctFar(p1, p0);
+            } else if (out1 == NEAR) { 
+                p1 = this.calctNear(p1, p0, z_min);
+            }
+            out1 = this.outcodePerspective(p1, z_min);
+        }
+
+        // trivially accept
+        if ((out0 | out1) == 0) {
+            result = {pt0: CG.Vector4(p0.x, p0.y, p0.z, 0), pt1: CG.Vector4(p1.x, p1.y, p1.z, 0)};
+            return result;
+        } 
+
+        // trivially reject
+        if ((this.outcodeTest(p0, z_min) & this.outcodeTest(p1, z_min)) != 0) { 
+            return result;
         }
     }
 
